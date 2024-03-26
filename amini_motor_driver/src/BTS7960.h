@@ -8,7 +8,7 @@ class BTS7960 {
         int lPWMPin;
         int lENPin;
     public:
-        BTS7960(int RIGHT_PWM_PIN, int RIGHT_ENABLE_PIN, int LEFT_PWM_PIN, int LEFT_ENABLE_PIN);
+        BTS7960(int rightPWMPin, int rightEnablePin, int leftPWMPin, int leftEnablePin);
         
         int cmdSpeed;
         int cmdDir;

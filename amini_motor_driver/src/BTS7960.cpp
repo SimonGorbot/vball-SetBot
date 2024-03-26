@@ -2,11 +2,11 @@
 #include <Arduino.h>
 #include "string.h"
 
-BTS7960::BTS7960(int RIGHT_PWM_PIN, int RIGHT_ENABLE_PIN, int LEFT_PWM_PIN, int LEFT_ENABLE_PIN){
-    rPWMPin = RIGHT_PWM_PIN;
-    rENPin = RIGHT_ENABLE_PIN;
-    lPWMPin = LEFT_PWM_PIN;
-    lENPin = LEFT_ENABLE_PIN;
+BTS7960::BTS7960(int rightPWMPin, int rightEnablePin, int leftPWMPin, int leftEnablePin){
+    rPWMPin = rightPWMPin;
+    rENPin = rightEnablePin;
+    lPWMPin = leftPWMPin;
+    lENPin = leftEnablePin;
 }
 
 void BTS7960::driveRight(int speed){
