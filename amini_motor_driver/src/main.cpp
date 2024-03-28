@@ -13,7 +13,6 @@ char receivedChars[numChars];
 String receivedString;
 boolean newCommand = false;
 
-
 BTS7960 testMotorL (RIGHT_CONTROL_PWM_SIG, RIGHT_CONTROL_EN, LEFT_CONTROL_PWM_SIG, LEFT_CONTROL_EN);
 BTS7960 testMotorR (1, 2, 6, 8);
 
@@ -24,6 +23,14 @@ bool receiveMotorCommand();
 bool showMotorCommand();
 void parseMotorCommmand(String Command, BTS7960 &leftMotorDriver, BTS7960 &rightMotorDriver);
 void ledBlink(){
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(200);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(200);
+  digitalWrite(LED_BUILTIN, HIGH);
+  delay(200);
+  digitalWrite(LED_BUILTIN, LOW);
+  delay(200);
   digitalWrite(LED_BUILTIN, HIGH);
   delay(200);
   digitalWrite(LED_BUILTIN, LOW);
@@ -49,9 +56,8 @@ void setup() {
 // the loop function runs over and over again forever
 void loop() {
   receiveMotorCommand();
-  receivedString = String(receivedChars);
   if (newCommand == true){
-    parseMotorCommmand(receivedString, testMotorL, testMotorR);
+    parseMotorCommmand(receivedChars, testMotorL, testMotorR);
     if (testMotorL.cmdSpeed >= 200){
       digitalWrite(LED_BUILTIN, HIGH);
     }
@@ -104,6 +110,10 @@ bool receiveMotorCommand() {
               if (ndx >= numChars) {
                   ndx = numChars - 1;
               }
+              // digitalWrite(LED_BUILTIN, HIGH);
+              // delay(200);
+              // digitalWrite(LED_BUILTIN, LOW);
+              // delay(200);
           }
           else {
               receivedChars[ndx] = '\0'; // terminate the string
@@ -121,7 +131,7 @@ bool showMotorCommand() {
     if (newCommand == true) {
         Serial.print("This just in ... ");
         Serial.println(receivedChars);
-        newCommand = false;
+        //newCommand = false;
         return true;
     }
 
@@ -134,11 +144,12 @@ void parseMotorCommmand(String commandStr, BTS7960 &leftMotorDriver, BTS7960 &ri
   
   uint32_t mot_com_bint = strtol(commandStr.c_str(), NULL, 2); //convert binary command string into binary int
 
-
   leftMotorDriver.cmdDir = mot_com_bint >> (20-2); //isolates bits 19 and 18 for motor 1 direction
   leftMotorDriver.cmdSpeed = mot_com_bint >> 8 & 0b11111111; //isolates bits 15 to 7 for motor 1 speed
   rightMotorDriver.cmdDir = mot_com_bint >> (20-4) & 0b11; //isolates bits 17 and 16 for motor 2 direction
   rightMotorDriver.cmdSpeed = mot_com_bint & 0b11111111; //isolates bits 7 to 0 for motor 2 speed
+
+  newCommand = false;
 
   // Serial.println(leftMotorDriver.cmdDir);
   // Serial.println(leftMotorDriver.cmdSpeed);
