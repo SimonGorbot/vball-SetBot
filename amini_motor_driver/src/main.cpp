@@ -4,10 +4,14 @@
 #include "BTS7960.h"
 
 //Pin Constant Definitions for Motor 1
-const int LEFT_CONTROL_PWM_SIG = 11;
-const int RIGHT_CONTROL_PWM_SIG = 10;
-const int RIGHT_CONTROL_EN = 3;
-const int LEFT_CONTROL_EN = 5;
+const int ONE_LEFT_CONTROL_PWM_SIG = 11;
+const int ONE_RIGHT_CONTROL_PWM_SIG = 10;
+const int ONE_RIGHT_CONTROL_EN = 3;
+const int ONE_LEFT_CONTROL_EN = 5;
+const int TWO_LEFT_CONTROL_PWM_SIG = 11;
+const int TWO_RIGHT_CONTROL_PWM_SIG = 10;
+const int TWO_RIGHT_CONTROL_EN = 3;
+const int TWO_LEFT_CONTROL_EN = 5;
 
 //variable definitions for UART Comms. with Pi
 const byte numChars = 32;
@@ -25,7 +29,7 @@ BTS7960 motorWhite (RIGHT_CONTROL_PWM_SIG, RIGHT_CONTROL_EN, LEFT_CONTROL_PWM_SI
 void motorRamp();
 void receiveMotorCommand();
 void showMotorCommand();
-void parseMotorCommmand(String commandStr, BTS7960 &motorDriver, int motor);
+void parseMotorCommmand(String commandStr, BTS7960 &motorDriver1, BTS7960 &motorDriver2);
 void ledBlink(){
   digitalWrite(LED_BUILTIN, HIGH);
   delay(200);
@@ -141,18 +145,13 @@ void showMotorCommand() {
     }
 }
 
-void parseMotorCommmand(String commandStr, BTS7960 &motorDriver, int motor) {
+void parseMotorCommmand(String commandStr, BTS7960 &motorDriver1, BTS7960 &motorDriver2) {
   uint32_t mot_com_bint = strtol(commandStr.c_str(), NULL, 2); //convert binary command string into binary int
 
-  if (motor == 1){
-    motorDriver.cmdDir = mot_com_bint >> (20-2); //isolates bits 19 and 18 for motor 1 direction
-    motorDriver.cmdSpeed = mot_com_bint >> 8 & 0b11111111; //isolates bits 15 to 7 for motor 1 speed
-  }
-
-  else if (motor == 2){
-    motorDriver.cmdDir = mot_com_bint >> (20-4) & 0b11; //isolates bits 17 and 16 for motor 2 direction
-    motorDriver.cmdSpeed = mot_com_bint & 0b11111111; //isolates bits 7 to 0 for motor 2 speed
-  }
+  motorDriver1.cmdDir = mot_com_bint >> (20-2); //isolates bits 19 and 18 for motor 1 direction
+  motorDriver1.cmdSpeed = mot_com_bint >> 8 & 0b11111111; //isolates bits 15 to 7 for motor 1 speed
+  motorDriver2.cmdDir = mot_com_bint >> (20-4) & 0b11; //isolates bits 17 and 16 for motor 2 direction
+  motorDriver2.cmdSpeed = mot_com_bint & 0b11111111; //isolates bits 7 to 0 for motor 2 speed
 
   newCommand = false;
 
