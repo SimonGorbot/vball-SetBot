@@ -1,6 +1,7 @@
 #include "H2010enc.h"
 #include <Arduino.h>
 
+//outputs HIGH when beam is obstructed and LOW when not.
 #define GET_RPM_TIMEOUT 5000
 #define NUM_SLITS_PER_DISK 2
 

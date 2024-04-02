@@ -1,6 +1,9 @@
 #ifndef BTS7960_H
 #define BTS7960_H
 
+#define MOTOR_SPIN_L 0b10
+#define MOTOR_SPIN_R 0b01
+
 class BTS7960 {
     private:
         int rPWMPin;
@@ -13,6 +16,8 @@ class BTS7960 {
         int cmdSpeed;
         int cmdDir;
 
+        void motorCommand(int action, int speed);
+        void motorCommandRamp(int action, int speed);
         void driveRight(int speed);
         void driveLeft(int speed);
         void brakeCoast();

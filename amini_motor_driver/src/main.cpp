@@ -3,25 +3,29 @@
 #include "Wire.h"
 #include "BTS7960.h"
 
-const int LEFT_CONTROL_PWM_SIG = 5;
-const int RIGHT_CONTROL_PWM_SIG = 3;
-const int RIGHT_CONTROL_EN = 12;
-const int LEFT_CONTROL_EN = 10;
+//Pin Constant Definitions for Motor 1
+const int LEFT_CONTROL_PWM_SIG = 11;
+const int RIGHT_CONTROL_PWM_SIG = 10;
+const int RIGHT_CONTROL_EN = 3;
+const int LEFT_CONTROL_EN = 5;
 
+//variable definitions for UART Comms. with Pi
 const byte numChars = 32;
 char receivedChars[numChars];
 String receivedString;
 boolean newCommand = false;
 
-BTS7960 testMotorL (RIGHT_CONTROL_PWM_SIG, RIGHT_CONTROL_EN, LEFT_CONTROL_PWM_SIG, LEFT_CONTROL_EN);
-BTS7960 testMotorR (1, 2, 6, 8);
+//Motor Object Construct
+BTS7960 motorBlack (RIGHT_CONTROL_PWM_SIG, RIGHT_CONTROL_EN, LEFT_CONTROL_PWM_SIG, LEFT_CONTROL_EN); //BLACK MOTOR
+BTS7960 motorWhite (RIGHT_CONTROL_PWM_SIG, RIGHT_CONTROL_EN, LEFT_CONTROL_PWM_SIG, LEFT_CONTROL_EN); //WHITE MOTOR
+#define MOTOR_BLACK 1  //consider motor 1 
+#define MOTOR_WHITE 2  //consider motor 2
 
-String mot_com_str = "\t10101000000010000000\n";
-
+//Function prototypes
 void motorRamp();
-bool receiveMotorCommand();
-bool showMotorCommand();
-void parseMotorCommmand(String Command, BTS7960 &leftMotorDriver, BTS7960 &rightMotorDriver);
+void receiveMotorCommand();
+void showMotorCommand();
+void parseMotorCommmand(String commandStr, BTS7960 &motorDriver, int motor);
 void ledBlink(){
   digitalWrite(LED_BUILTIN, HIGH);
   delay(200);
@@ -41,31 +45,35 @@ void ledBlink(){
   delay(200);
 }
 
+//Debug Stuff
+String test_motor_command_str = "\t10101001000000010000\n"; 
+
+
 void setup() {
+  //initialize serial
   Serial.begin(9600);
 
-  //set up PWM output pins for motor drivers
+  //set up PWM and EN output pins for motor drivers
   pinMode(LEFT_CONTROL_PWM_SIG, OUTPUT);
   pinMode(RIGHT_CONTROL_PWM_SIG, OUTPUT);
   pinMode(LEFT_CONTROL_EN, OUTPUT);
   pinMode(RIGHT_CONTROL_EN, OUTPUT);
 
-  testMotorL.brakeCoast();
+  //set motors to coast
+  motorWhite.brakeCoast();
+  // motor1.motorCommandRamp(0b10, 50);
+  // delay(5000);
+  // motor1.brakeCoast();
 }
 
 // the loop function runs over and over again forever
 void loop() {
   receiveMotorCommand();
   if (newCommand == true){
-    parseMotorCommmand(receivedChars, testMotorL, testMotorR);
-    if (testMotorL.cmdSpeed >= 200){
-      digitalWrite(LED_BUILTIN, HIGH);
-    }
-    else {
-      digitalWrite(LED_BUILTIN, LOW);
-    }
-  }
-  showMotorCommand();
+    parseMotorCommmand(receivedChars, motorWhite, MOTOR_WHITE);
+    motorWhite.motorCommandRamp(motorWhite.cmdDir, motorWhite.cmdSpeed);
+    digitalWrite(LED_BUILTIN, !digitalRead(LED_BUILTIN));
+  } 
 }
 
 void motorRamp() {
@@ -89,7 +97,7 @@ void motorRamp() {
   Serial.println("======FINISHED TEST======");
 }
 
-bool receiveMotorCommand() {
+void receiveMotorCommand() {
   static boolean recvInProgress = false;
   static byte ndx = 0;
   char startMarker = '\t';
@@ -123,37 +131,31 @@ bool receiveMotorCommand() {
           }
       }
   }
-
-  return newCommand;
 }
 
-bool showMotorCommand() {
+void showMotorCommand() {
     if (newCommand == true) {
         Serial.print("This just in ... ");
         Serial.println(receivedChars);
-        //newCommand = false;
-        return true;
-    }
-
-    else{
-      return false;
+        newCommand = false;
     }
 }
 
-void parseMotorCommmand(String commandStr, BTS7960 &leftMotorDriver, BTS7960 &rightMotorDriver) {
-  
+void parseMotorCommmand(String commandStr, BTS7960 &motorDriver, int motor) {
   uint32_t mot_com_bint = strtol(commandStr.c_str(), NULL, 2); //convert binary command string into binary int
 
-  leftMotorDriver.cmdDir = mot_com_bint >> (20-2); //isolates bits 19 and 18 for motor 1 direction
-  leftMotorDriver.cmdSpeed = mot_com_bint >> 8 & 0b11111111; //isolates bits 15 to 7 for motor 1 speed
-  rightMotorDriver.cmdDir = mot_com_bint >> (20-4) & 0b11; //isolates bits 17 and 16 for motor 2 direction
-  rightMotorDriver.cmdSpeed = mot_com_bint & 0b11111111; //isolates bits 7 to 0 for motor 2 speed
+  if (motor == 1){
+    motorDriver.cmdDir = mot_com_bint >> (20-2); //isolates bits 19 and 18 for motor 1 direction
+    motorDriver.cmdSpeed = mot_com_bint >> 8 & 0b11111111; //isolates bits 15 to 7 for motor 1 speed
+  }
+
+  else if (motor == 2){
+    motorDriver.cmdDir = mot_com_bint >> (20-4) & 0b11; //isolates bits 17 and 16 for motor 2 direction
+    motorDriver.cmdSpeed = mot_com_bint & 0b11111111; //isolates bits 7 to 0 for motor 2 speed
+  }
 
   newCommand = false;
 
-  // Serial.println(leftMotorDriver.cmdDir);
-  // Serial.println(leftMotorDriver.cmdSpeed);
-  // Serial.println(rightMotorDriver.cmdDir);
-  // Serial.println(rightMotorDriver.cmdSpeed);
-
+  // Serial.println(motorDriver.cmdDir);
+  // Serial.println(motorDriver.cmdSpeed);
 }
