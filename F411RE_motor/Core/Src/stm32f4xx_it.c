@@ -20,6 +20,7 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
+#include <stdio.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
 /* USER CODE END Includes */
@@ -41,6 +42,8 @@
 
 /* Private variables ---------------------------------------------------------*/
 /* USER CODE BEGIN PV */
+extern volatile uint32_t last_time;
+extern volatile float speed;
 
 /* USER CODE END PV */
 
@@ -72,7 +75,7 @@ void NMI_Handler(void)
 
   /* USER CODE END NonMaskableInt_IRQn 0 */
   /* USER CODE BEGIN NonMaskableInt_IRQn 1 */
-   while (1)
+  while (1)
   {
   }
   /* USER CODE END NonMaskableInt_IRQn 1 */
@@ -197,6 +200,35 @@ void SysTick_Handler(void)
 /* For the available peripheral interrupt handler names,                      */
 /* please refer to the startup file (startup_stm32f4xx.s).                    */
 /******************************************************************************/
+
+/**
+  * @brief This function handles EXTI line[9:5] interrupts.
+  */
+void EXTI9_5_IRQHandler(void)
+{
+  /* USER CODE BEGIN EXTI9_5_IRQn 0 */
+    static uint32_t current_time;
+    current_time = HAL_GetTick();
+    printf("Interrupt triggered: current_time = %lu, last_time = %lu\r\n", current_time, last_time);
+
+    // Calculate speed in RPM (or other unit) based on time interval
+    if (current_time != last_time) {
+        // 3000 = 60000/20 slots per rotaion
+    	speed = (1.0/((current_time - last_time) * 20.0)) * 60000;
+    	//speed = (float)(3000.0 / (current_time - last_time));
+    	printf("Delta T: %lu \r\n", current_time - last_time);
+    	printf("Motor speed: %f RPM\r\n", speed);
+
+        last_time = current_time;
+    }
+
+  /* USER CODE END EXTI9_5_IRQn 0 */
+  HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
+  /* USER CODE BEGIN EXTI9_5_IRQn 1 */
+  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
+
+  /* USER CODE END EXTI9_5_IRQn 1 */
+}
 
 /* USER CODE BEGIN 1 */
 

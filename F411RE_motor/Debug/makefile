@@ -84,8 +84,8 @@ all: main-build
 main-build: F411RE_motor.elf secondary-outputs
 
 # Tool invocations
-F411RE_motor.elf F411RE_motor.map: $(OBJS) $(USER_OBJS) C:\Users\Kevin\STM32CubeIDE\workspace_1.16.1\F411RE_motor\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
-	arm-none-eabi-g++ -o "F411RE_motor.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Kevin\STM32CubeIDE\workspace_1.16.1\F411RE_motor\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="F411RE_motor.map" -Wl,--gc-sections -static --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
+F411RE_motor.elf F411RE_motor.map: $(OBJS) $(USER_OBJS) C:\Users\Kevin\Desktop\Repos\vball-SetBot\F411RE_motor\STM32F411RETX_FLASH.ld makefile objects.list $(OPTIONAL_TOOL_DEPS)
+	arm-none-eabi-g++ -o "F411RE_motor.elf" @"objects.list" $(USER_OBJS) $(LIBS) -mcpu=cortex-m4 -T"C:\Users\Kevin\Desktop\Repos\vball-SetBot\F411RE_motor\STM32F411RETX_FLASH.ld" --specs=nosys.specs -Wl,-Map="F411RE_motor.map" -Wl,--gc-sections -static -u _printf_float --specs=nano.specs -mfpu=fpv4-sp-d16 -mfloat-abi=hard -mthumb -Wl,--start-group -lc -lm -lstdc++ -lsupc++ -Wl,--end-group
 	@echo 'Finished building target: $@'
 	@echo ' '
 
