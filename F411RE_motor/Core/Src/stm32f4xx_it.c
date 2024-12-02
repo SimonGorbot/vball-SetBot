@@ -20,9 +20,12 @@
 /* Includes ------------------------------------------------------------------*/
 #include "main.h"
 #include "stm32f4xx_it.h"
-#include <stdio.h>
 /* Private includes ----------------------------------------------------------*/
 /* USER CODE BEGIN Includes */
+#include "stm32f4xx_hal_uart.h"
+#include <stdio.h>
+#include <string.h>
+
 /* USER CODE END Includes */
 
 /* Private typedef -----------------------------------------------------------*/
@@ -44,6 +47,15 @@
 /* USER CODE BEGIN PV */
 extern volatile uint32_t last_time;
 extern volatile float speed;
+extern volatile uint8_t is_timer_active;
+extern UART_HandleTypeDef huart2;
+volatile uint8_t tim2_count = 0;
+volatile uint32_t prev_window = 0;
+volatile uint32_t curr_window = 0;
+volatile uint32_t window = 0;
+volatile uint8_t pulse_count = 0;
+volatile float window_speed = 0.0;
+
 
 /* USER CODE END PV */
 
@@ -58,7 +70,7 @@ extern volatile float speed;
 /* USER CODE END 0 */
 
 /* External variables --------------------------------------------------------*/
-
+extern TIM_HandleTypeDef htim2;
 /* USER CODE BEGIN EV */
 
 /* USER CODE END EV */
@@ -207,27 +219,64 @@ void SysTick_Handler(void)
 void EXTI9_5_IRQHandler(void)
 {
   /* USER CODE BEGIN EXTI9_5_IRQn 0 */
-    static uint32_t current_time;
-    current_time = HAL_GetTick();
-    printf("Interrupt triggered: current_time = %lu, last_time = %lu\r\n", current_time, last_time);
 
-    // Calculate speed in RPM (or other unit) based on time interval
-    if (current_time != last_time) {
-        // 3000 = 60000/20 slots per rotaion
-    	speed = (1.0/((current_time - last_time) * 20.0)) * 60000;
-    	//speed = (float)(3000.0 / (current_time - last_time));
-    	printf("Delta T: %lu \r\n", current_time - last_time);
-    	printf("Motor speed: %f RPM\r\n", speed);
 
-        last_time = current_time;
+  uint32_t current_time = __HAL_TIM_GET_COUNTER(&htim2);  // Use HAL_GetTick() for millisecond precision
+
+  // Check if enough time has passed since the last interrupt (debouncing for 1ms)
+  if ((current_time - last_time) > 50 && is_timer_active) { // 1ms debounce threshold
+		// 3000 = 60000/20 slots per rotation
+		//printf("Interrupt Speed: %f RPM\r\n", (1.0 / ((current_time - last_time) * 20.0)) * 6000000); // timer should be 100 ticks per ms
+		last_time = current_time;
+		pulse_count++;
     }
 
   /* USER CODE END EXTI9_5_IRQn 0 */
   HAL_GPIO_EXTI_IRQHandler(GPIO_PIN_8);
   /* USER CODE BEGIN EXTI9_5_IRQn 1 */
-  HAL_GPIO_TogglePin(GPIOA, GPIO_PIN_5);
 
   /* USER CODE END EXTI9_5_IRQn 1 */
+}
+
+/**
+  * @brief This function handles TIM2 global interrupt.
+  */
+void TIM2_IRQHandler(void)
+{
+  /* USER CODE BEGIN TIM2_IRQn 0 */
+  // Check if the update interrupt flag is set
+  if (__HAL_TIM_GET_FLAG(&htim2, TIM_FLAG_UPDATE) != RESET) {
+      __HAL_TIM_CLEAR_FLAG(&htim2, TIM_FLAG_UPDATE); // Clear the update interrupt flag
+      //printf("TIM2 interrupt triggered: %lu \n", HAL_GetTick());
+      curr_window = HAL_GetTick();
+      if (curr_window > prev_window){
+    	  window_speed = (pulse_count / (float)(curr_window - prev_window)) * 3000;
+
+    	  printf("Window Speed: %f RPM | Pulse Count: %d | Window: %lu | \r\n", window_speed, pulse_count, curr_window - prev_window );
+    	  prev_window = curr_window;
+      }
+
+      // Perform custom logic for timer overflow
+      if (tim2_count < 3){
+
+    	  is_timer_active = 0;
+    	  tim2_count++;
+    	  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 0);
+
+      } else {
+    	  pulse_count = 0;
+    	  is_timer_active = 1;
+    	  tim2_count = 0;
+    	  //HAL_GPIO_WritePin(GPIOA, GPIO_PIN_5, 1);
+      }
+
+  }
+
+  /* USER CODE END TIM2_IRQn 0 */
+  HAL_TIM_IRQHandler(&htim2);
+  /* USER CODE BEGIN TIM2_IRQn 1 */
+
+  /* USER CODE END TIM2_IRQn 1 */
 }
 
 /* USER CODE BEGIN 1 */
